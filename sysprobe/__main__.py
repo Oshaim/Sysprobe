@@ -1,7 +1,7 @@
 import argparse
 
-from sysprobe.Commands.trace import trace
-from sysprobe.Commands.watch import InotifyEvent, watch
+from .commands.trace import trace
+from .commands.watch import InotifyEvent, watch
 
 
 def parse_args():
