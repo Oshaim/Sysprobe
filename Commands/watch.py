@@ -62,7 +62,9 @@ def _parse_inotify_event(event_buffer):
         yield wd, mask, cookie, name
 
 def watch(path, mask, duration):
-    # TODO: If path doesn't exist, create it
+    if not os.path.exists(path):
+        os.mkdir(path)
+    
     inotify_fd = LIBC.inotify_init()
     assert inotify_fd != -1, "Failed to inotify_init, errno: {}".format(ctypes.get_errno())
     print("inotify instance:", inotify_fd)
