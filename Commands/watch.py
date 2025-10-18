@@ -22,16 +22,17 @@ IN_DELETE_SELF =    0x00000400
 IN_MOVE_SELF =      0x00000800
 
 
-def watch(path, mask):
-    inotify_instance = LIBC.inotify_init()
-    assert inotify_instance != -1, "Failed to inotify_init, errno: {}".format(ctypes.get_errno())
-    print("inotify instance:", inotify_instance)
+def watch(path, mask, duration):
+    # TODO: If path doesn't exist, create it
+    inotify_fd = LIBC.inotify_init()
+    assert inotify_fd != -1, "Failed to inotify_init, errno: {}".format(ctypes.get_errno())
+    print("inotify instance:", inotify_fd)
 
-    watch_descriptor = LIBC.inotify_add_watch(inotify_instance, path.encode(), mask)
+    watch_descriptor = LIBC.inotify_add_watch(inotify_fd, path.encode(), mask)
     assert watch_descriptor != -1, "Failed to inotify_add_watch, errno: {}".format(ctypes.get_errno())
 
-    assert LIBC.inotify_rm_watch(inotify_instance, watch_descriptor) != -1, \
+    assert LIBC.inotify_rm_watch(inotify_fd, watch_descriptor) != -1, \
         "Failed to inotify_rm_watch, errno: {}".format(ctypes.get_errno())
 
-    os.close(inotify_instance)
+    os.close(inotify_fd)
     
