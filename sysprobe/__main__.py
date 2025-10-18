@@ -1,7 +1,7 @@
 import argparse
 
 from .commands.trace import trace
-from .commands.watch import InotifyEvent, watch
+from .commands.watch import InotifyEventMask, watch
 
 
 def parse_args():
@@ -19,7 +19,7 @@ def parse_args():
 def main(args):
     if args.command == "watch":
         watch(args.dir, 
-              InotifyEvent.IN_MODIFY | InotifyEvent.IN_CREATE | InotifyEvent.IN_DELETE | InotifyEvent.IN_DELETE_SELF | InotifyEvent.IN_MOVED_FROM | InotifyEvent.IN_MOVED_TO,
+              InotifyEventMask.IN_MODIFY | InotifyEventMask.IN_CREATE | InotifyEventMask.IN_DELETE | InotifyEventMask.IN_DELETE_SELF | InotifyEventMask.IN_MOVED_FROM | InotifyEventMask.IN_MOVED_TO,
               args.secs)
     elif args.command == "trace":
         trace(args.secs)

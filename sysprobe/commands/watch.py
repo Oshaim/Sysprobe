@@ -24,7 +24,7 @@ INOTIFY_EVENT_HEADER_SIZE = struct.calcsize(INOTIFY_EVENT_HEADER_FORMAT)
 INOTIFY_EVENT_MAX_SIZE = INOTIFY_EVENT_HEADER_SIZE + MAX_NAME_LENGTH + 1
 
 
-class InotifyEvent(IntFlag):
+class InotifyEventMask(IntFlag):
     IN_MODIFY       = 0x00000002
     IN_MOVED_FROM   = 0x00000040
     IN_MOVED_TO     = 0x00000080
@@ -34,50 +34,59 @@ class InotifyEvent(IntFlag):
     IN_MOVE_SELF    = 0x00000800
 
 
+class InotifyEvent:
+    def __init__(self, wd, mask, cookie, name):
+        self.wd = wd
+        self.mask = mask
+        self.cookie = cookie
+        self.name = name
+
+    @classmethod
+    def from_buffer(cls, event_buffer):
+        offset = 0
+        while offset + INOTIFY_EVENT_HEADER_SIZE <= len(event_buffer):
+            wd, mask, cookie, name_length = struct.unpack_from(INOTIFY_EVENT_HEADER_FORMAT, event_buffer, offset)
+
+            name_start_offset = offset + INOTIFY_EVENT_HEADER_SIZE
+            name = event_buffer[name_start_offset:(name_start_offset + name_length)].rstrip(b"\0")
+
+            offset += INOTIFY_EVENT_HEADER_SIZE + name_length
+            yield cls(wd, mask, cookie, name)
+
+
 def _read_inotify_events(inotify_fd, path, duration):
     start_time = time.time()
-    
+
     while time.time() - start_time < duration:
         remaining_time = duration - (time.time() - start_time)
         try:
             is_ready, _, _ = select([inotify_fd], [], [], remaining_time)
             if is_ready:
                 event_buffer = os.read(inotify_fd, MAX_INOTIFY_EVENTS * INOTIFY_EVENT_MAX_SIZE)
-                for _, mask, _, _, name in _parse_inotify_event(event_buffer):
+                for event in InotifyEvent.from_buffer(event_buffer):
                     print("{}\t{}\t{}".format(
-                        time.strftime("%Y-%m-%dT%H:%M:%SZ"), 
-                        InotifyEvent(mask).name, 
-                        os.path.join(path, name.decode())
+                        time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                        InotifyEventMask(event.mask).name,
+                        os.path.join(path, event.name.decode())
                     ))
         except OSError as e:
             if e.errno == errno.EINTR:
                 continue
-
-def _parse_inotify_event(event_buffer):
-    event_offset = 0    
-    while event_offset + INOTIFY_EVENT_HEADER_SIZE <= len(event_buffer):
-        wd, mask, cookie, name_length = struct.unpack_from(INOTIFY_EVENT_HEADER_FORMAT, event_buffer, event_offset)
-
-        name_start_offset = event_offset + INOTIFY_EVENT_HEADER_SIZE
-        name = event_buffer[name_start_offset:(name_start_offset + name_length)].rstrip(b"\0")
-
-        event_offset += INOTIFY_EVENT_HEADER_SIZE + name_length
-        yield wd, mask, cookie, name_length, name
 
 def watch(path, mask, duration):
     if not os.path.exists(path):
         os.mkdir(path)
     
     inotify_fd = LIBC.inotify_init()
-    assert inotify_fd != -1, "Failed to inotify_init, errno: {}".format(ctypes.get_errno())
+    assert inotify_fd != -1, f"Failed to inotify_init, errno: {ctypes.get_errno()}"
     
     watch_descriptor = LIBC.inotify_add_watch(inotify_fd, path.encode(), mask)
-    assert watch_descriptor != -1, "Failed to inotify_add_watch, errno: {}".format(ctypes.get_errno())
+    assert watch_descriptor != -1, f"Failed to inotify_add_watch, errno: {ctypes.get_errno()}"
 
     _read_inotify_events(inotify_fd, path, duration)
 
     assert LIBC.inotify_rm_watch(inotify_fd, watch_descriptor) != -1, \
-        "Failed to inotify_rm_watch, errno: {}".format(ctypes.get_errno())
+        f"Failed to inotify_rm_watch, errno: {ctypes.get_errno()}"
 
     os.close(inotify_fd)
     
