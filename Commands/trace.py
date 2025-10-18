@@ -9,6 +9,12 @@ DEBUGFS_PATH = "/sys/kernel/debug"
 TRACING_PATH = os.path.join(DEBUGFS_PATH, "tracing")
 TRACE_PIPE_PATH = os.path.join(TRACING_PATH, "trace_pipe")
 
+EVENTS = [
+    "syscalls/sys_enter_write",     
+    "sched/sched_switch",
+    "sched/sched_process_exec",
+    "net/netif_receive_skb"
+]
 
 @contextmanager
 def _enable_event(event_path):
@@ -33,11 +39,10 @@ def trace(duration):
     if not os.path.ismount(DEBUGFS_PATH):
         subprocess.run(["mount", "-t", "debugfs", "none", "/sys/kernel/debug"], check=True)
 
-    events = ["/sys/kernel/debug/tracing/events/syscalls/sys_enter_write"]
-
     with contextlib.ExitStack() as stack:
-        for event in events:
-            stack.enter_context(_enable_event(event))
+        for event in EVENTS:
+            event_full_path = os.path.join(TRACING_PATH, "events", event)
+            stack.enter_context(_enable_event(event_full_path))
 
         _read_trace_pipe(duration)
     
