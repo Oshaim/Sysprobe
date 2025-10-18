@@ -1,10 +1,12 @@
 import argparse
 
-from Commands.watch import (IN_CREATE, IN_DELETE, IN_DELETE_SELF, IN_MODIFY, IN_MOVED_FROM, IN_MOVED_TO, 
-                            watch)
+from Commands.watch import InotifyEvent, watch
+
 
 def main():
-    watch(".", IN_MODIFY | IN_CREATE | IN_DELETE | IN_DELETE_SELF | IN_MOVED_FROM | IN_MOVED_TO)
+    watch(".", 
+          InotifyEvent.IN_MODIFY | InotifyEvent.IN_CREATE | InotifyEvent.IN_DELETE | InotifyEvent.IN_DELETE_SELF | InotifyEvent.IN_MOVED_FROM | InotifyEvent.IN_MOVED_TO,
+          20)
 
 def parse_args():
     parser = argparse.ArgumentParser()
