@@ -23,7 +23,9 @@ def main(args):
               args.secs)
     elif args.command == "trace":
         trace(args.secs)
-    
+    else:
+        raise ValueError(f"Unknown command: {args.command}")
+
 if __name__ == "__main__":
     args = parse_args()
     main(args)

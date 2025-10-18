@@ -10,10 +10,10 @@ TRACING_PATH = os.path.join(DEBUGFS_PATH, "tracing")
 TRACE_PIPE_PATH = os.path.join(TRACING_PATH, "trace_pipe")
 
 EVENTS = [
-    "syscalls/sys_enter_write",     
+    "syscalls/sys_enter_write",
     "sched/sched_switch",
     "sched/sched_process_exec",
-    "net/netif_receive_skb"
+    "net/netif_receive_skb",
 ]
 
 @contextmanager

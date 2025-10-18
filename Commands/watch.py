@@ -30,7 +30,6 @@ class InotifyEvent(IntFlag):
     IN_MOVED_TO     = 0x00000080
     IN_CREATE       = 0x00000100
     IN_DELETE       = 0x00000200
-    # TODO: ?
     IN_DELETE_SELF  = 0x00000400
     IN_MOVE_SELF    = 0x00000800
 
