@@ -4,6 +4,7 @@ import ctypes
 import struct
 import time
 from enum import IntFlag
+from select import select
 
 
 LIBC = ctypes.CDLL(None, use_errno=True)
@@ -39,13 +40,17 @@ def _read_inotify_events(inotify_fd, duration):
     start_time = time.time()
     
     while time.time() - start_time < duration:
+        remaining_time = duration - (time.time() - start_time)
         try:
-            event_buffer = os.read(inotify_fd, MAX_INOTIFY_EVENTS * INOTIFY_EVENT_MAX_SIZE)
-            for _, mask, _, name in _parse_inotify_event(event_buffer):
-                # TODO: Add the directory path prefix
-                print("{}\t{}\t{}".format(
-                    time.strftime("%Y-%m-%dT%H:%M:%SZ"), InotifyEvent(mask).name, name.decode()
-                ))
+            is_ready, _, _ = select([inotify_fd], [], [], remaining_time)
+            if is_ready:
+                event_buffer = os.read(inotify_fd, MAX_INOTIFY_EVENTS * INOTIFY_EVENT_MAX_SIZE)
+                for _, mask, _, name in _parse_inotify_event(event_buffer):
+                    print("{}\t{}\t{}".format(
+                        time.strftime("%Y-%m-%dT%H:%M:%SZ"), 
+                        InotifyEvent(mask).name, 
+                        name.decode()
+                    ))
         except OSError as e:
             if e.errno == errno.EINTR:
                 continue
