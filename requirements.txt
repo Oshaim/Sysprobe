@@ -1,0 +1,2 @@
+setuptools==80.9.0
+-e git+https://github.com/Oshaim/Sysprobe.git#egg=sysprobe
