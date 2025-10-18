@@ -1,5 +1,6 @@
 import contextlib
 import os
+import subprocess
 import time
 from contextlib import contextmanager
 
@@ -29,7 +30,8 @@ def _read_trace_pipe(duration):
             print(trace_pipe.readline(), end="")
             
 def trace(duration):
-    assert os.path.ismount(DEBUGFS_PATH), f"{DEBUGFS_PATH} is not mounted"
+    if not os.path.ismount(DEBUGFS_PATH):
+        subprocess.run(["mount", "-t", "debugfs", "none", "/sys/kernel/debug"], check=True)
 
     events = ["/sys/kernel/debug/tracing/events/syscalls/sys_enter_write"]
 
